@@ -3,7 +3,6 @@ package i18n
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,6 +11,8 @@ import (
 	"github.com/cloudfoundry/cli/cf/i18n/detection"
 	resources "github.com/cloudfoundry/cli/cf/resources"
 	go_i18n "github.com/nicksnyder/go-i18n/i18n"
+	"github.com/nicksnyder/go-i18n/i18n/language"
+	"github.com/nicksnyder/go-i18n/i18n/translation"
 )
 
 const (
@@ -121,32 +122,36 @@ func loadFromAsset(locale string) error {
 		return errors.New(fmt.Sprintf("Could not load i18n asset: %v", assetKey))
 	}
 
-	_, err = os.Stat(os.TempDir())
-	if err != nil {
-		if !os.IsExist(err) {
-			return errors.New("Please make sure Temp dir exist - " + os.TempDir())
-		} else {
-			return err
-		}
-	}
+	// _, err = os.Stat(os.TempDir())
+	// if err != nil {
+	// 	if !os.IsExist(err) {
+	// 		return errors.New("Please make sure Temp dir exist - " + os.TempDir())
+	// 	} else {
+	// 		return err
+	// 	}
+	// }
 
-	tmpDir, err := ioutil.TempDir("", "cloudfoundry_cli_i18n_res")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		os.RemoveAll(tmpDir)
-	}()
+	// tmpDir, err := ioutil.TempDir("", "cloudfoundry_cli_i18n_res")
+	// if err != nil {
+	// 	return err
+	// }
+	// defer func() {
+	// 	os.RemoveAll(tmpDir)
+	// }()
 
-	fileName, err := saveLanguageFileToDisk(tmpDir, assetName, byteArray)
-	if err != nil {
-		return err
-	}
+	// fileName, err := saveLanguageFileToDisk(tmpDir, assetName, byteArray)
+	// if err != nil {
+	// 	return err
+	// }
 
-	go_i18n.MustLoadTranslationFile(fileName)
+	// go_i18n.MustLoadTranslationFile(fileName)
 
-	os.RemoveAll(fileName)
+	// os.RemoveAll(fileName)
 
+	transMap := map[string]interface{}{"id": "jim", "translation": "james"}
+	trans, _ := translation.NewTranslation(transMap)
+
+	go_i18n.AddTranslation(&language.Language{Tag: "en-us"}, trans)
 	return nil
 }
 

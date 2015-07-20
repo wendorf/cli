@@ -7,9 +7,10 @@ package terminal
 import (
 	"bufio"
 	"fmt"
-	. "github.com/cloudfoundry/cli/cf/i18n"
 	"os"
-	"os/signal"
+
+	. "github.com/cloudfoundry/cli/cf/i18n"
+	// "os/signal"
 	"strings"
 	"syscall"
 )
@@ -28,7 +29,7 @@ var sttyArgvEOn []string = []string{"stty", "echo"}
 var ws syscall.WaitStatus = 0
 
 func (ui terminalUI) AskForPassword(prompt string, args ...interface{}) (passwd string) {
-	sig := make(chan os.Signal, 10)
+	// sig := make(chan os.Signal, 10)
 
 	// Display the prompt.
 	fmt.Println("")
@@ -37,13 +38,13 @@ func (ui terminalUI) AskForPassword(prompt string, args ...interface{}) (passwd 
 	// File descriptors for stdin, stdout, and stderr.
 	fd := []uintptr{os.Stdin.Fd(), os.Stdout.Fd(), os.Stderr.Fd()}
 
-	// Setup notifications of termination signals to channel sig, create a process to
-	// watch for these signals so we can turn back on echo if need be.
-	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGKILL, syscall.SIGQUIT,
-		syscall.SIGTERM)
-	defer signal.Stop(sig)
+	// // Setup notifications of termination signals to channel sig, create a process to
+	// // watch for these signals so we can turn back on echo if need be.
+	// signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGKILL, syscall.SIGQUIT,
+	// 	syscall.SIGTERM)
+	// defer signal.Stop(sig)
 
-	go catchSignal(fd, sig)
+	// go catchSignal(fd, sig)
 
 	pid, err := echoOff(fd)
 	defer echoOn(fd)
@@ -93,10 +94,10 @@ func echoOn(fd []uintptr) {
 // catchSignal tries to catch SIGKILL, SIGQUIT and SIGINT so that we can turn terminal
 // echo back on before the program ends.  Otherwise the user is left with echo off on
 // their terminal.
-func catchSignal(fd []uintptr, sig chan os.Signal) {
-	select {
-	case <-sig:
-		echoOn(fd)
-		os.Exit(2)
-	}
-}
+// func catchSignal(fd []uintptr, sig chan os.Signal) {
+// 	select {
+// 	case <-sig:
+// 		echoOn(fd)
+// 		os.Exit(2)
+// 	}
+// }
