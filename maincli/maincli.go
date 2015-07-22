@@ -1,4 +1,4 @@
-package main
+package maincli
 
 import (
 	"fmt"
@@ -45,29 +45,30 @@ type cliDependencies struct {
 	detector       detection.Detector
 }
 
-func main() {
+func Maincli(args []string) {
 	//make a reference to something in cf/commands/domain, so all init() in the directory will run
 	_ = domain.CreateDomain{}
 	_ = buildpack.ListBuildpacks{}
 	_ = quota.CreateQuota{}
 
-	defer handlePanics(deps.TeePrinter)
+	defer handlePanics(args, deps.TeePrinter)
 	defer deps.Config.Close()
 
 	//////////////// non-codegangsta path  ///////////////////////
-	if len(os.Args) > 1 {
-		cmd := os.Args[1]
+	if len(args) > 1 {
+		cmd := args[1]
+
 		if cmdRegistry.CommandExists(cmd) {
 
-			meta := cmdRegistry.FindCommand(os.Args[1]).MetaData()
+			meta := cmdRegistry.FindCommand(args[1]).MetaData()
 			fc := flags.NewFlagContext(meta.Flags)
 			fc.SkipFlagParsing(meta.SkipFlagParsing)
 
-			if requestHelp(os.Args[2:]) {
+			if requestHelp(args[2:]) {
 				deps.Ui.Say(cmdRegistry.CommandUsage(cmd))
 				os.Exit(0)
 			} else {
-				err := fc.Parse(os.Args[2:]...)
+				err := fc.Parse(args[2:]...)
 				if err != nil {
 					deps.Ui.Failed("Incorrect Usage\n\n" + err.Error() + "\n\n" + cmdRegistry.CommandUsage(cmd))
 				}
@@ -87,7 +88,7 @@ func main() {
 			}
 
 			cfCmd.Execute(fc)
-			os.Exit(0)
+			return
 		}
 	}
 	//////////////////////////////////////////
@@ -105,12 +106,12 @@ func main() {
 	//return only metadata for current command
 	metaDatas = mergePluginMetaData(metaDatas, pluginList)
 
-	if len(os.Args) > 1 {
-		flags := cmdFactory.GetCommandFlags(os.Args[1])
-		totalArgs, _ := cmdFactory.GetCommandTotalArgs(os.Args[1])
+	if len(args) > 1 {
+		flags := cmdFactory.GetCommandFlags(args[1])
+		totalArgs, _ := cmdFactory.GetCommandTotalArgs(args[1])
 
-		if args2skip := totalArgs + 2; len(os.Args) >= args2skip {
-			badFlags = matchArgAndFlags(flags, os.Args[args2skip:])
+		if args2skip := totalArgs + 2; len(args) >= args2skip {
+			badFlags = matchArgAndFlags(flags, args[args2skip:])
 		}
 
 		if badFlags != "" {
@@ -124,16 +125,16 @@ func main() {
 	rpcService.SetTheApp(theApp)
 
 	//command `cf` without argument
-	if len(os.Args) == 1 || os.Args[1] == "help" || requestHelp(os.Args[2:]) {
-		theApp.Run(os.Args)
-	} else if cmdFactory.CheckIfCoreCmdExists(os.Args[1]) {
-		callCoreCommand(os.Args[0:], theApp)
+	if len(args) == 1 || args[1] == "help" || requestHelp(args[2:]) {
+		theApp.Run(args)
+	} else if cmdFactory.CheckIfCoreCmdExists(args[1]) {
+		callCoreCommand(args[0:], theApp)
 	} else {
 		// run each plugin and find the method/
 		// run method if exist
-		ran := rpc.RunMethodIfExists(rpcService, os.Args[1:], pluginList)
+		ran := rpc.RunMethodIfExists(rpcService, args[1:], pluginList)
 		if !ran {
-			theApp.Run(os.Args)
+			theApp.Run(args)
 		}
 	}
 }
@@ -162,10 +163,10 @@ OPTIONS:
 {{end}}`, badFlags)
 }
 
-func handlePanics(printer terminal.Printer) {
+func handlePanics(args []string, printer terminal.Printer) {
 	panic_printer.UI = terminal.NewUI(os.Stdin, printer)
 
-	commandArgs := strings.Join(os.Args, " ")
+	commandArgs := strings.Join(args, " ")
 	stackTrace := generateBacktrace()
 
 	err := recover()

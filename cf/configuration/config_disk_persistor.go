@@ -1,9 +1,9 @@
 package configuration
 
 import (
-	"io/ioutil"
 	"os"
-	"path/filepath"
+
+	"github.com/gopherjs/gopherjs/js"
 )
 
 const (
@@ -62,17 +62,18 @@ func (dp DiskPersistor) Save(data DataInterface) (err error) {
 }
 
 func (dp DiskPersistor) read(data DataInterface) error {
-	err := os.MkdirAll(filepath.Dir(dp.filePath), dirPermissions)
-	if err != nil {
-		return err
-	}
+	// err := os.MkdirAll(filepath.Dir(dp.filePath), dirPermissions)
+	// if err != nil {
+	// 	return err
+	// }
 
-	jsonBytes, err := ioutil.ReadFile(dp.filePath)
-	if err != nil {
-		return err
-	}
+	// jsonBytes, err := ioutil.ReadFile(dp.filePath)
+	jsonBytes := []byte(js.Global.Get("window").Get("localStorage").Call("getItem", dp.filePath).String())
+	// if err != nil {
+	// 	return err
+	// }
 
-	err = data.JsonUnmarshalV3(jsonBytes)
+	err := data.JsonUnmarshalV3(jsonBytes)
 	return err
 }
 
@@ -82,6 +83,7 @@ func (dp DiskPersistor) write(data DataInterface) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(dp.filePath, bytes, filePermissions)
+	// err = ioutil.WriteFile(dp.filePath, bytes, filePermissions)
+	js.Global.Get("window").Get("localStorage").Call("setItem", dp.filePath, string(bytes))
 	return err
 }

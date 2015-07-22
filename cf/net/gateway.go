@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -413,23 +412,22 @@ func (gateway Gateway) doRequestAndHandlerError(request *Request) (rawResponse *
 }
 
 func (gateway Gateway) doRequest(request *http.Request) (response *http.Response, err error) {
-	if gateway.transport == nil {
-		makeHttpTransport(&gateway)
-	}
+	// if gateway.transport == nil {
+	// 	makeHttpTransport(&gateway)
+	// }
 
-	httpClient := NewHttpClient(gateway.transport)
+	// httpClient := NewHttpClient(gateway.transport)
 
 	dumpRequest(request)
 
 	for i := 0; i < 3; i++ {
-		response, err = httpClient.Do(request)
+		response, err = http.DefaultClient.Do(request)
 		if response == nil && err != nil {
 			continue
 		} else {
 			break
 		}
 	}
-
 	if err != nil {
 		return
 	}
@@ -448,7 +446,7 @@ func (gateway Gateway) doRequest(request *http.Request) (response *http.Response
 
 func makeHttpTransport(gateway *Gateway) {
 	gateway.transport = &http.Transport{
-		Dial:            (&net.Dialer{Timeout: 5 * time.Second}).Dial,
+		// Dial:            (&net.Dialer{Timeout: 5 * time.Second}).Dial,
 		TLSClientConfig: NewTLSConfig(gateway.trustedCerts, gateway.config.IsSSLDisabled()),
 		Proxy:           http.ProxyFromEnvironment,
 	}
