@@ -30,7 +30,7 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-var deps = command_registry.NewDependency()
+var Deps = command_registry.NewDependency()
 
 var cmdRegistry = command_registry.Commands
 
@@ -51,8 +51,8 @@ func Maincli(args []string) {
 	_ = buildpack.ListBuildpacks{}
 	_ = quota.CreateQuota{}
 
-	defer handlePanics(args, deps.TeePrinter)
-	defer deps.Config.Close()
+	defer handlePanics(args, Deps.TeePrinter)
+	defer Deps.Config.Close()
 
 	//////////////// non-codegangsta path  ///////////////////////
 	if len(args) > 1 {
@@ -65,20 +65,20 @@ func Maincli(args []string) {
 			fc.SkipFlagParsing(meta.SkipFlagParsing)
 
 			if requestHelp(args[2:]) {
-				deps.Ui.Say(cmdRegistry.CommandUsage(cmd))
+				Deps.Ui.Say(cmdRegistry.CommandUsage(cmd))
 				os.Exit(0)
 			} else {
 				err := fc.Parse(args[2:]...)
 				if err != nil {
-					deps.Ui.Failed("Incorrect Usage\n\n" + err.Error() + "\n\n" + cmdRegistry.CommandUsage(cmd))
+					Deps.Ui.Failed("Incorrect Usage\n\n" + err.Error() + "\n\n" + cmdRegistry.CommandUsage(cmd))
 				}
 			}
-			cmdRegistry.SetCommand(cmdRegistry.FindCommand(cmd).SetDependency(deps, false))
+			cmdRegistry.SetCommand(cmdRegistry.FindCommand(cmd).SetDependency(Deps, false))
 
 			cfCmd := cmdRegistry.FindCommand(cmd)
-			reqs, err := cfCmd.Requirements(requirements.NewFactory(deps.Ui, deps.Config, deps.RepoLocator), fc)
+			reqs, err := cfCmd.Requirements(requirements.NewFactory(Deps.Ui, Deps.Config, Deps.RepoLocator), fc)
 			if err != nil {
-				deps.Ui.Failed(err.Error())
+				Deps.Ui.Failed(err.Error())
 			}
 
 			for _, r := range reqs {
@@ -93,12 +93,12 @@ func Maincli(args []string) {
 	}
 	//////////////////////////////////////////
 
-	rpcService := newCliRpcServer(deps.TeePrinter, deps.TeePrinter)
+	rpcService := newCliRpcServer(Deps.TeePrinter, Deps.TeePrinter)
 
-	cmdFactory := command_factory.NewFactory(deps.Ui, deps.Config, deps.ManifestRepo, deps.RepoLocator, deps.PluginConfig, rpcService)
-	requirementsFactory := requirements.NewFactory(deps.Ui, deps.Config, deps.RepoLocator)
-	cmdRunner := command_runner.NewRunner(cmdFactory, requirementsFactory, deps.Ui)
-	pluginsConfig := plugin_config.NewPluginConfig(func(err error) { deps.Ui.Failed(fmt.Sprintf("Error read/writing plugin config: %s, ", err.Error())) })
+	cmdFactory := command_factory.NewFactory(Deps.Ui, Deps.Config, Deps.ManifestRepo, Deps.RepoLocator, Deps.PluginConfig, rpcService)
+	requirementsFactory := requirements.NewFactory(Deps.Ui, Deps.Config, Deps.RepoLocator)
+	cmdRunner := command_runner.NewRunner(cmdFactory, requirementsFactory, Deps.Ui)
+	pluginsConfig := plugin_config.NewPluginConfig(func(err error) { Deps.Ui.Failed(fmt.Sprintf("Error read/writing plugin config: %s, ", err.Error())) })
 	pluginList := pluginsConfig.Plugins()
 
 	var badFlags string
@@ -194,9 +194,9 @@ func callCoreCommand(args []string, theApp *cli.App) {
 	if err != nil {
 		os.Exit(1)
 	}
-	gateways := gatewaySliceFromMap(deps.Gateways)
+	gateways := gatewaySliceFromMap(Deps.Gateways)
 
-	warningsCollector := net.NewWarningsCollector(deps.Ui, gateways...)
+	warningsCollector := net.NewWarningsCollector(Deps.Ui, gateways...)
 	warningsCollector.PrintWarnings()
 }
 
@@ -291,7 +291,7 @@ func requestHelp(args []string) bool {
 }
 
 func newCliRpcServer(outputCapture terminal.OutputCapture, terminalOutputSwitch terminal.TerminalOutputSwitch) *rpc.CliRpcService {
-	cliServer, err := rpc.NewRpcService(nil, outputCapture, terminalOutputSwitch, deps.Config, deps.RepoLocator, rpc.NewNonCodegangstaRunner())
+	cliServer, err := rpc.NewRpcService(nil, outputCapture, terminalOutputSwitch, Deps.Config, Deps.RepoLocator, rpc.NewNonCodegangstaRunner())
 	if err != nil {
 		fmt.Println("Error initializing RPC service: ", err)
 		os.Exit(1)
